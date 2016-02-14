@@ -51,16 +51,15 @@ def processIrisData(data):
     processed = []
 
     for example in data:
-        print example
         sLenValue, sWidValue, pLenValue, pWidValue, irisValue = example.split(",")
 
         irisClass = 0
 
-        if (irisValue == "Iris-setosa"):
-            irisClass = -1
-        elif (irisValue == "Iris-versicolor"):
+        if (irisValue.rstrip() == "Iris-setosa"):
             irisClass = 0
-        elif (irisValue == "Iris-virginica"):
+        elif (irisValue.rstrip() == "Iris-versicolor"):
+            irisClass = 1
+        elif (irisValue.rstrip() == "Iris-virginica"):
             irisClass = 1
 
         processed.append((float(sLenValue),float(sWidValue),float(pLenValue),float(pWidValue),irisClass))
