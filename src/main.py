@@ -1,154 +1,109 @@
-import matplotlib.pyplot as plt
-import random
-import math
+from network import Network
+import sys
 
-fileName = "../data/datos_P1_RN_EM2016_n2000.txt"
+dataFolder = "../data/"
 
-class Neuron:
-
-    def __init__(self, id, output, error):
-        self.id = id
-        self.output = output
-        self.error = error
-
-    def getId(self):
-        return self.id
-
-    def getOutput(self):
-        return self.output
-
-    def getError(self):
-        return self.error
-
-    def setError(self,error):
-        self.error = error
-
-    def __str__(self):
-        return "Neuro:\n ID: %s\n Output: %s\n Error:%s" %(self.id,self.output,self.error)
+MAXITER = 1000000
+MINERR = .002
+MIN = 0
+MAX = 20
 
 def readFile(fileName):
 
     lines = []
-
     with open(fileName, "r") as f:
         lines = f.readlines()
 
     return lines
+
+def normalizeInput(inputX,inputY,target):
+
+    x = (inputX-MIN)/(MAX-MIN)
+    y = (inputY-MIN)/(MAX-MIN)
+
+    if (target == -1): 
+        target = 0
     
+    return (x,y,target)
 
-def printGraph():
-    plt.axis([0,20,0,20])
+def processData(data,datasetType):
 
-    lines = readFile(fileName)
+    if (datasetType == 1):
+        return processCircleData(data)
+    if (datasetType == 2):
+        return processIrisData(data)
+    if (datasetType == 3):
+        return processLogicalOpData(data)
 
-    for line in lines:
-        x,y,value = line.split(" ")
+def processCircleData(data):
 
-        if (int(value) > 0):
-            plt.plot(x, y, 'rs',  markersize=5)
-        else:
-            plt.plot(x, y, 'bo', markersize=5)
+    processed = []
 
-    circle=plt.Circle((10,10),7,fill=False)
-    plt.gca().add_artist(circle)
-    plt.axis('equal')
-    plt.savefig('graph.png')
-
-
-# como se calcula el error del while?
-
-error = 1
-minError = 0.02
-maxIterations = 500
-z = 0
-data = readFile(fileName)
-hiddenNeurons = 4
-inputNeurons = 2
-outputNeuron = 1
-learningRate = 0.05
-totalNeurons = hiddenNeurons + inputNeurons + outputNeuron
-#random.random()*0.5
-weightMatrix = [[0.2 for x in range(totalNeurons+1)] for x in range(totalNeurons+1)] 
-
-print weightMatrix
-
-
-while (error != 0 and error > minError and z < maxIterations):
-    
     for example in data:
-        
-        neurons = []
         xValue,yValue,targetValue = example.split(" ")
+        x,y,target = normalizeInput(float(xValue),float(yValue),int(targetValue))
+        processed.append((x,y,target))
 
-        x = float(xValue)
-        y = float(yValue)
-        target = int(targetValue)
-        # inputArray = [float(x),float(y)]
+    return processed
 
-        for i in range(inputNeurons+1,inputNeurons+hiddenNeurons+1):
-        
-            net = weightMatrix[1][i] * x +weightMatrix[2][i]* y + weightMatrix[0][i]
-            output = 1 / (1 + math.exp(-net))
+def processIrisData(data):
+    return "TODO"
 
-            # print "Hidden layer net: %s" %(net)
-            neuron = Neuron(i,output,-1)
-            neurons.append(neuron)
+def processLogicalOpData(data):
 
-        outerNeurons = []
+    processed = []
 
-        for i in range(inputNeurons+hiddenNeurons+1,totalNeurons+1):
+    for example in data:
+        x,y,target = example.split(" ")
+        processed.append((int(x),int(y),int(target)))
 
-            net = weightMatrix[0][i]
+    return processed
 
-            for neuron in neurons:
-                net += weightMatrix[neuron.getId()][i] * neuron.getOutput()
+def main(argv):
 
-                # print "Neuron id: %s i: %s net: %s" %(neuron.getId(),i,net)
+    if len(argv) != 3:
+        print "python main.py <datasetType> <inputfile> <numHiddenLayerNeurons>"
+        print "Dataset Type:"
+        print "\t1 -> circle"
+        print "\t2 -> iris"
+        print "\t3 -> logical operators"
+        sys.exit()
 
-            output = 1 / (1 + math.exp(-net))
+    datasetType = int(argv[0])
+    fileName = argv[1]
+    numHidden = int(argv[2])
 
-            # print "Outer layer output: %s" %(output)
+    datasetFolder = ""
 
-            errorOuter = output*(1-output)*(target-output)
+    if (datasetType == 1):
+        datasetFolder = "circle/"
+    elif (datasetType == 2):
+        datasetFolder = "iris/"
+    elif (datasetType == 3):
+        datasetFolder = "logicalOperators/"
 
-            neuron = Neuron(i,output,errorOuter)
+    path = dataFolder+datasetFolder+fileName
+    print path
+    f = open(path,'r')
 
-            outerNeurons.append(neuron)
+    fileData = readFile(path)
+    data = processData(fileData,datasetType)
+    
+    iteration = 0
+    totalError = 1
+    numInput = 2
+    numOuter = 1
 
-        for neuron in neurons:
+    network = Network(numInput,numHidden,numOuter)
 
-            errorNeuron = neuron.getOutput()*(1-neuron.getOutput())
-            errorSum = 0
+    while (totalError != 0 and totalError > MINERR and iteration < MAXITER):
 
-            for outerNeuron in outerNeurons:
+        print "Iteration: %s" %(iteration)
+        totalError = 0
+        totalError = network.train(data)
+        iteration += 1
+    
+    network.printWeights()
 
-                errorSum += outerNeuron.getError() * weightMatrix[neuron.getId()][outerNeuron.getId()]
-
-            errorNeuron = errorNeuron*errorSum
-                
-            neuron.setError(errorNeuron)
-
-            for outerNeuron in outerNeurons:
-
-                weightMatrix[neuron.getId()][outerNeuron.getId()] += learningRate*outerNeuron.getError()*neuron.getOutput()
-                weightMatrix[0][outerNeuron.getId()] +=  learningRate*outerNeuron.getError()
-
-                print "Outer neuron output: %s target: %s" %(outerNeuron.getOutput(),target)
-        
-            weightMatrix[1][neuron.getId()] +=  learningRate*neuron.getError()*x 
-            weightMatrix[2][neuron.getId()] +=  learningRate*neuron.getError()*y
-            weightMatrix[0][neuron.getId()] +=  learningRate*neuron.getError()
-
-            # print "Hidden neuron layer output: %s" %(neuron.getOutput())
-
-    z += 1
-
-
-
-
-
-
-
-
-
-
+if __name__ == '__main__':
+    main(sys.argv[1:])

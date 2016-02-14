@@ -5,18 +5,6 @@ import math
 fileName = "../data/datos_P1_RN_EM2016_n500.txt"
 
 LEARNRATE = 0.05
-MAXITER = 1000000
-MINERR = .002
-MIN = 0
-MAX = 20
-
-def readFile(fileName):
-
-    lines = []
-    with open(fileName, "r") as f:
-        lines = f.readlines()
-
-    return lines
 
 def getRandom():
     return random.random()*0.5
@@ -123,90 +111,67 @@ class NeuronLayer:
         for neuron in self.neurons:
             neuron.updateWeights()
 
-def normalizeInput(inputX,inputY,target):
 
-    x = (inputX-MIN)/(MAX-MIN)
-    y = (inputY-MIN)/(MAX-MIN)
 
-    if (target == -1): 
-        target = 0
-    
-    return (x,y,target)
+class Network:
 
-def train():
+    def __init__(self,numInput,numHidden,numOuter):
+        self.numHidden = numHidden
+        self.numOuter = numOuter
+        
+        self.hiddenLayer = NeuronLayer(0,numHidden,numInput)
+        self.outerLayer = NeuronLayer(numHidden,numOuter,numHidden)
 
-    totalError = 1
-    iteration = 0
-    numHidden = 10
-    numOuter = 1
-    numInput = 2
-    
-    data = readFile(fileName)
+    def train(self,data):
 
-    #TESTING AND
-    # data = [(0,0,0),(0,1,0),(1,0,0),(1,1,1)]
-    
-    hiddenLayer = NeuronLayer(0,numHidden,numInput)
-    outerLayer = NeuronLayer(numHidden,numOuter,numHidden)
-
-    hiddenLayer.printWeights()
-    outerLayer.printWeights()
-
-    while (totalError != 0 and totalError > MINERR and iteration < MAXITER):
-
-        print "Iteration: %s" %(iteration)
         totalError = 0
 
         for example in data:
 
-            xValue,yValue,targetValue = example.split(" ")
-
-            x,y,target = normalizeInput(float(xValue),float(yValue),int(targetValue))
-
-            #TESTING AND
-            # x,y,target = example
+            x,y,target = example
             
             inputs = [x,y]
 
-            hiddenLayer.setInput(inputs)            
-            hiddenOutputs = hiddenLayer.calculateOutputs()
+            self.hiddenLayer.setInput(inputs)            
+            hiddenOutputs = self.hiddenLayer.calculateOutputs()
 
-            outerLayer.setInput(hiddenOutputs)
-            outerOutputs = outerLayer.calculateOutputs()
+            self.outerLayer.setInput(hiddenOutputs)
+            outerOutputs = self.outerLayer.calculateOutputs()
 
-            errorsOuter = outerLayer.calculateOuterErrors(target)
+            errorsOuter = self.outerLayer.calculateOuterErrors(target)
 
-            for neuron in hiddenLayer.neurons:
+            for neuron in self.hiddenLayer.neurons:
 
                 output = neuron.getOutput()
                 errorHidden = output*(1-output)
                 errorSum = 0
 
-                for outerNeuron in outerLayer.neurons:
+                for outerNeuron in self.outerLayer.neurons:
                     errorSum += outerNeuron.calculateErrorSum(neuron.getId())
 
                 errorHidden = errorHidden * errorSum
 
                 neuron.setError(errorHidden)
             
-            hiddenLayer.updateWeights()
-            outerLayer.updateWeights()
+            self.hiddenLayer.updateWeights()
+            self.outerLayer.updateWeights()
 
             error = 0
 
-            for o in outerLayer.getOutput():
-                error += 0.5*(target-o)**2
+            for o in self.outerLayer.getOutput():
+                error += (target-o)**2
 
             totalError += error
             # print "Outer output: %s - Target: %s - Error: %s" %(outerLayer.getOutput(),target,error)
     
-        print "Error: %s\n" %(totalError)    
-        iteration += 1
+        totalError *= 0.5
+        print "Error: %s\n" %(totalError)
 
-    print "\nHIDDEN LAYER WEIGHTS:"
-    hiddenLayer.printWeights()
+        return totalError
 
-    print "\nOUTER LAYER WEIGHTS:"
-    outerLayer.printWeights()
+    def printWeights(self):
 
-train()
+        print "\nHIDDEN LAYER WEIGHTS:"
+        self.hiddenLayer.printWeights()
+        print "\nOUTER LAYER WEIGHTS:"
+        self.outerLayer.printWeights()
