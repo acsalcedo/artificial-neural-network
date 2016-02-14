@@ -128,10 +128,12 @@ class Network:
 
         for example in data:
 
-            x,y,target = example
-            
-            inputs = [x,y]
+            inputs = []
+            for i in example[:-1]:
+                inputs.append(i)
 
+            target = example[-1]
+            
             self.hiddenLayer.setInput(inputs)            
             hiddenOutputs = self.hiddenLayer.calculateOutputs()
 

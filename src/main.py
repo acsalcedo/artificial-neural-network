@@ -29,11 +29,11 @@ def normalizeInput(inputX,inputY,target):
 def processData(data,datasetType):
 
     if (datasetType == 1):
-        return processCircleData(data)
+        return (processCircleData(data),2)
     if (datasetType == 2):
-        return processIrisData(data)
+        return (processIrisData(data),4)
     if (datasetType == 3):
-        return processLogicalOpData(data)
+        return (processLogicalOpData(data),2)
 
 def processCircleData(data):
 
@@ -47,7 +47,25 @@ def processCircleData(data):
     return processed
 
 def processIrisData(data):
-    return "TODO"
+
+    processed = []
+
+    for example in data:
+        print example
+        sLenValue, sWidValue, pLenValue, pWidValue, irisValue = example.split(",")
+
+        irisClass = 0
+
+        if (irisValue == "Iris-setosa"):
+            irisClass = -1
+        elif (irisValue == "Iris-versicolor"):
+            irisClass = 0
+        elif (irisValue == "Iris-virginica"):
+            irisClass = 1
+
+        processed.append((float(sLenValue),float(sWidValue),float(pLenValue),float(pWidValue),irisClass))
+    
+    return processed
 
 def processLogicalOpData(data):
 
@@ -87,11 +105,10 @@ def main(argv):
     f = open(path,'r')
 
     fileData = readFile(path)
-    data = processData(fileData,datasetType)
+    data,numInput = processData(fileData,datasetType)
     
     iteration = 0
-    totalError = 1
-    numInput = 2
+    totalError = 1 
     numOuter = 1
 
     network = Network(numInput,numHidden,numOuter)
