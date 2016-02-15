@@ -1,5 +1,7 @@
 import random
 import math
+import matplotlib.pyplot as plt
+
 
 LEARNRATE = 0.05
 
@@ -118,8 +120,8 @@ class NeuronLayer:
 
     def calculateOuterErrors(self,target):
         errors = []
-        for neuron in self.neurons:
-            errors.append(neuron.calculateOuterError(target))
+        for i in range(len(self.neurons)):
+            errors.append(self.neurons[i].calculateOuterError(target[i]))
         return errors
 
 class Network:
@@ -153,12 +155,13 @@ class Network:
 
         for example in data:
 
+
             inputs = []
             for i in example[:-1]:
                 inputs.append(i)
 
             target = example[-1]
-            
+        
             self.hiddenLayer.setInput(inputs)            
             hiddenOutputs = self.hiddenLayer.calculateOutputs()
 
@@ -183,20 +186,24 @@ class Network:
             self.hiddenLayer.updateWeights()
             self.outerLayer.updateWeights()
 
-            error = 0
+            error, i = 0, 0
 
             for o in self.outerLayer.getOutput():
-                error += (target-o)**2
+                error += (target[i]-o)
+                i += 1
 
+            error *= error
             totalError += error
             # print "Outer output: %s - Target: %s - Error: %s" %(outerLayer.getOutput(),target,error)
     
-        totalError *= 0.5
+        totalError = totalError / len(data)
         print "Error: %s\n" %(totalError)
 
         return totalError
 
     def classify(self,data):
+
+        # plt.axis([0,20,0,20])
 
         for example in data:
 
@@ -211,6 +218,15 @@ class Network:
             outerOutputs = self.outerLayer.calculateOutputs()
 
             for o in outerOutputs:
-                print o
-                # TODO
 
+                if (o < 0.5):
+                    print 0
+                    # plt.plot(inputs[0], inputs[1], 'rs',  markersize=5)
+                elif (o >= 0.5):
+                    print 1
+                    # plt.plot(inputs[0], inputs[1], 'bo', markersize=5)
+
+        # circle=plt.Circle((10,10),7,fill=False)
+        # plt.gca().add_artist(circle)
+        # plt.axis('equal')
+        # plt.savefig('graph2.png')
