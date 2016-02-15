@@ -37,7 +37,17 @@ class Neuron:
 
         for i in range(len(self.input)):
             self.weights[i] += LEARNRATE*self.error*self.input[i]
+
+    def getWeights(self):
+        w = self.weights
+        w.append(self.threshold)
+        return w
     
+    def setWeights(self,weights):
+
+        self.weights = weights[:-2]
+        self.threshold = weights[-1]
+
     def calculateOutput(self):
 
         net = self.threshold
@@ -111,7 +121,18 @@ class NeuronLayer:
         for neuron in self.neurons:
             neuron.updateWeights()
 
+    def getWeights(self):
 
+        weights = []
+
+        for neuron in self.neurons:
+            weights.append(neuron.getWeights())
+        return weights
+
+    def setWeights(self,weights):
+
+        for i in range(len(self.neurons)):
+            self.neurons[i].setWeights(weights[i])
 
 class Network:
 
@@ -177,3 +198,56 @@ class Network:
         self.hiddenLayer.printWeights()
         print "\nOUTER LAYER WEIGHTS:"
         self.outerLayer.printWeights()
+
+    def printGraph():
+        plt.axis([0,20,0,20])
+    
+        lines = readFile(fileName)
+    
+        for line in lines:
+            x,y,value = line.split(" ")
+    
+            if (int(value) > 0):
+                plt.plot(x, y, 'rs',  markersize=5)
+            else:
+                plt.plot(x, y, 'bo', markersize=5)
+    
+        circle=plt.Circle((10,10),7,fill=False)
+        plt.gca().add_artist(circle)
+        plt.axis('equal')
+        plt.savefig('graph.png')
+    
+    def getWeights(self):
+
+        weights = []
+        weights.append(self.hiddenLayer.getWeights())
+        weights.append(self.outerLayer.getWeights())
+        return (self.hiddenLayer.getWeights(),self.outerLayer.getWeights())
+    
+    def setWeights(self,weights):
+
+        hiddenWeights,outerWeights = weights
+        self.hiddenLayer.setWeights(hiddenWeights)
+        self.outerLayer.setWeights(outerWeights)
+
+    def classify(self,data):
+
+        for example in data:
+
+            inputs = []
+            for i in example[:-1]:
+                inputs.append(i)
+
+            self.hiddenLayer.setInput(inputs)            
+            hiddenOutputs = self.hiddenLayer.calculateOutputs()
+
+            self.outerLayer.setInput(hiddenOutputs)
+            outerOutputs = self.outerLayer.calculateOutputs()
+
+            for o in outerOutputs:
+                print o
+                # if (int(value) > 0):
+                #     plt.plot(x, y, 'rs',  markersize=5)
+                # else:
+                #     plt.plot(x, y, 'bo', markersize=5)
+

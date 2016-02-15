@@ -1,10 +1,12 @@
 from network import Network
 import sys
+import json
 
 dataFolder = "../data/"
+weightsFolder = "../weights/"
 
 MAXITER = 1000000
-MINERR = .002
+MINERR = .00002
 MIN = 0
 MAX = 20
 
@@ -78,8 +80,8 @@ def processLogicalOpData(data):
 
 def main(argv):
 
-    if len(argv) != 3:
-        print "python main.py <datasetType> <inputfile> <numHiddenLayerNeurons>"
+    if len(argv) < 3: 
+        print "python main.py <datasetType> <inputfile> <numHiddenLayerNeurons> <weightsFile>"
         print "Dataset Type:"
         print "\t1 -> circle"
         print "\t2 -> iris"
@@ -100,7 +102,6 @@ def main(argv):
         datasetFolder = "logicalOperators/"
 
     path = dataFolder+datasetFolder+fileName
-    print path
     f = open(path,'r')
 
     fileData = readFile(path)
@@ -112,6 +113,16 @@ def main(argv):
 
     network = Network(numInput,numHidden,numOuter)
 
+    if len(argv) == 4:
+
+        path = weightsFolder+datasetFolder+"weights_"+str(numHidden)+"_"+fileName
+        
+        with open(path,'r') as weightsFile:
+            weights = json.load(weightsFile)
+
+        network.setWeights(weights)
+
+
     while (totalError != 0 and totalError > MINERR and iteration < MAXITER):
 
         print "Iteration: %s" %(iteration)
@@ -120,6 +131,18 @@ def main(argv):
         iteration += 1
     
     network.printWeights()
+
+    weights = network.getWeights()
+
+    path = weightsFolder+datasetFolder+"weights_"+str(numHidden)+"_"+fileName
+    with open(path,'w') as weightsFile:
+        json.dump(weights,weightsFile)
+
+
+    # fileData = readFile(dataFolder+datasetFolder+"or.txt")
+    # data,numInput = processData(fileData,datasetType)
+
+    # network2.classify(data)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
