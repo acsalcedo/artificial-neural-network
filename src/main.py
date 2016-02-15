@@ -1,14 +1,34 @@
+import matplotlib.pyplot as plt
 from network import Network
-import sys
 import json
+import sys
 
 dataFolder = "../data/"
 weightsFolder = "../weights/"
 
 MAXITER = 1000000
-MINERR = .00002
+MINERR = 0.02
 MIN = 0
 MAX = 20
+
+def printGraph():
+    plt.axis([0,20,0,20])
+
+    lines = readFile(fileName)
+
+    for line in lines:
+        x,y,value = line.split(" ")
+
+        if (int(value) > 0):
+            plt.plot(x, y, 'rs',  markersize=5)
+        else:
+            plt.plot(x, y, 'bo', markersize=5)
+
+    circle=plt.Circle((10,10),7,fill=False)
+    plt.gca().add_artist(circle)
+    plt.axis('equal')
+    plt.savefig('graph.png')
+
 
 def readFile(fileName):
 
@@ -108,7 +128,7 @@ def main(argv):
     data,numInput = processData(fileData,datasetType)
     
     iteration = 0
-    totalError = 1 
+    totalError = 2000
     numOuter = 1
 
     network = Network(numInput,numHidden,numOuter)
@@ -123,6 +143,7 @@ def main(argv):
         network.setWeights(weights)
 
 
+    #TODO Verify previous error to see if it changes
     while (totalError != 0 and totalError > MINERR and iteration < MAXITER):
 
         print "Iteration: %s" %(iteration)

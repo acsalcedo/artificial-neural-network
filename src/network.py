@@ -1,8 +1,5 @@
-import matplotlib.pyplot as plt
 import random
 import math
-
-fileName = "../data/datos_P1_RN_EM2016_n500.txt"
 
 LEARNRATE = 0.05
 
@@ -17,26 +14,20 @@ class Neuron:
         self.output = 0
         self.input = []
         self.weights = []
+
+        #Initialization of the weights.
         self.threshold = getRandom()
-        
         for i in range(numInput):
             self.weights.append(getRandom())
     
     def getId(self):
         return self.id
 
-    def getThreshold(self):
-        return self.threshold
-
     def setInput(self,inputs):
         self.input = inputs
 
-    def updateWeights(self):
-
-        self.threshold += LEARNRATE*self.error
-
-        for i in range(len(self.input)):
-            self.weights[i] += LEARNRATE*self.error*self.input[i]
+    def getThreshold(self):
+        return self.threshold
 
     def getWeights(self):
         w = self.weights
@@ -44,12 +35,19 @@ class Neuron:
         return w
     
     def setWeights(self,weights):
-
         self.weights = weights[:-2]
         self.threshold = weights[-1]
+    
+    def updateWeights(self):
+        self.threshold += LEARNRATE*self.error
+        
+        for i in range(len(self.input)):
+            self.weights[i] += LEARNRATE*self.error*self.input[i]
+
+    def getOutput(self):
+        return self.output
 
     def calculateOutput(self):
-
         net = self.threshold
         
         for i in range(len(self.input)):
@@ -58,9 +56,6 @@ class Neuron:
         output = 1 / (1 + math.exp(-net))
         self.output = output
         return output
-
-    def getOutput(self):
-        return self.output
 
     def getError(self):
         return self.error
@@ -74,7 +69,6 @@ class Neuron:
 
     def calculateErrorSum(self,pos):
         return self.weights[pos] * self.error
-
     
 class NeuronLayer:
 
@@ -87,7 +81,21 @@ class NeuronLayer:
     def setInput(self,inputs):
         for neuron in self.neurons:
             neuron.setInput(inputs)
+    
+    def getWeights(self):
+        weights = []
+        for neuron in self.neurons:
+            weights.append(neuron.getWeights())
+        return weights
 
+    def setWeights(self,weights):
+        for i in range(len(self.neurons)):
+            self.neurons[i].setWeights(weights[i])
+
+    def updateWeights(self):
+        for neuron in self.neurons:
+            neuron.updateWeights()
+    
     def printWeights(self):
         for neuron in self.neurons:
             print "Neuron: %s - " %(neuron.getId()),
@@ -96,43 +104,23 @@ class NeuronLayer:
                 print "%s " %(weight),
             print
     
-    def calculateOutputs(self):
-        outputs = []
-        for neuron in self.neurons:
-            outputs.append(neuron.calculateOutput())
-
-        return outputs
-
     def getOutput(self):
         outputs = []
         for neuron in self.neurons:
             outputs.append(neuron.getOutput())
-
         return outputs
     
+    def calculateOutputs(self):
+        outputs = []
+        for neuron in self.neurons:
+            outputs.append(neuron.calculateOutput())
+        return outputs
+
     def calculateOuterErrors(self,target):
         errors = []
         for neuron in self.neurons:
             errors.append(neuron.calculateOuterError(target))
-
         return errors
-
-    def updateWeights(self):
-        for neuron in self.neurons:
-            neuron.updateWeights()
-
-    def getWeights(self):
-
-        weights = []
-
-        for neuron in self.neurons:
-            weights.append(neuron.getWeights())
-        return weights
-
-    def setWeights(self,weights):
-
-        for i in range(len(self.neurons)):
-            self.neurons[i].setWeights(weights[i])
 
 class Network:
 
@@ -143,8 +131,24 @@ class Network:
         self.hiddenLayer = NeuronLayer(0,numHidden,numInput)
         self.outerLayer = NeuronLayer(numHidden,numOuter,numHidden)
 
+    def getWeights(self):
+        weights = []
+        weights.append(self.hiddenLayer.getWeights())
+        weights.append(self.outerLayer.getWeights())
+        return (self.hiddenLayer.getWeights(),self.outerLayer.getWeights())
+    
+    def setWeights(self,weights):
+        hiddenWeights,outerWeights = weights
+        self.hiddenLayer.setWeights(hiddenWeights)
+        self.outerLayer.setWeights(outerWeights)
+    
+    def printWeights(self):
+        print "\nHIDDEN LAYER WEIGHTS:"
+        self.hiddenLayer.printWeights()
+        print "\nOUTER LAYER WEIGHTS:"
+        self.outerLayer.printWeights()
+    
     def train(self,data):
-
         totalError = 0
 
         for example in data:
@@ -192,44 +196,6 @@ class Network:
 
         return totalError
 
-    def printWeights(self):
-
-        print "\nHIDDEN LAYER WEIGHTS:"
-        self.hiddenLayer.printWeights()
-        print "\nOUTER LAYER WEIGHTS:"
-        self.outerLayer.printWeights()
-
-    def printGraph():
-        plt.axis([0,20,0,20])
-    
-        lines = readFile(fileName)
-    
-        for line in lines:
-            x,y,value = line.split(" ")
-    
-            if (int(value) > 0):
-                plt.plot(x, y, 'rs',  markersize=5)
-            else:
-                plt.plot(x, y, 'bo', markersize=5)
-    
-        circle=plt.Circle((10,10),7,fill=False)
-        plt.gca().add_artist(circle)
-        plt.axis('equal')
-        plt.savefig('graph.png')
-    
-    def getWeights(self):
-
-        weights = []
-        weights.append(self.hiddenLayer.getWeights())
-        weights.append(self.outerLayer.getWeights())
-        return (self.hiddenLayer.getWeights(),self.outerLayer.getWeights())
-    
-    def setWeights(self,weights):
-
-        hiddenWeights,outerWeights = weights
-        self.hiddenLayer.setWeights(hiddenWeights)
-        self.outerLayer.setWeights(outerWeights)
-
     def classify(self,data):
 
         for example in data:
@@ -246,8 +212,5 @@ class Network:
 
             for o in outerOutputs:
                 print o
-                # if (int(value) > 0):
-                #     plt.plot(x, y, 'rs',  markersize=5)
-                # else:
-                #     plt.plot(x, y, 'bo', markersize=5)
+                # TODO
 
