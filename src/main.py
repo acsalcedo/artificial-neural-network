@@ -1,13 +1,16 @@
 import matplotlib.pyplot as plt
 from network import Network
 import json
-import sys
+import sys, os.path
+import time
+import getopt
 
 dataFolder = "../data/"
 weightsFolder = "../weights/"
+errorFolder = "../error/"
 
-MAXITER = 1000000
-MINERR = 0.002
+MAXITER = 10000
+MINERR = 0.001
 MIN = 0
 MAX = 20
 
@@ -138,20 +141,49 @@ def processLogicalOpData2(data):
 
     return processed
 
+def printError():
+    print "\npython main.py -t <datasetType> -i <inputDataFile> -n <numHiddenLayerNeurons> -w <weightsFile> -r <learnRate>"
+    print "\nDataset Type:"
+    print "\t1 -> circle"
+    print "\t2 -> iris"
+    print "\t3 -> iris with three classes" 
+    print "\t4 -> logical operators"
+    print "\nWeights file and learn rate are optional."
+    print
+    sys.exit(2)
+
 def main(argv):
 
-    if len(argv) < 3: 
-        print "python main.py <datasetType> <inputfile> <numHiddenLayerNeurons> <weightsFile>"
-        print "Dataset Type:"
-        print "\t1 -> circle"
-        print "\t2 -> iris"
-        print "\t3 -> iris with three classes" 
-        print "\t4 -> logical operators"
-        sys.exit()
+    try:
+        opts, args = getopt.getopt(argv,"t:i:n:w:r:",["datasetType=","infile=","numHidden=","weightsFile=","rate="])
+    except getopt.GetoptError:
+        print "\nIncorrect call. Please try again."
+        printError()
 
-    datasetType = int(argv[0])
-    fileName = argv[1]
-    numHidden = int(argv[2])
+    datasetType = None
+    numHidden = None
+    weightsFile = None
+    learnRate = 0.05
+
+    for opt, arg in opts:
+        if opt in ("-t", "--datasetType"):
+            datasetType = int(arg)
+        elif opt in ("-i", "--infile"):
+            fileName = str(arg)
+        elif opt in ("-n", "--numHidden"):
+            numHidden = int(arg)
+        elif opt in ("-w", "--weightsFile"):
+            weightsFile = str(arg)
+        elif opt in ("-r", "--rate"):
+            learnRate = float(arg)
+
+    if numHidden is None:
+        print "\nPlease enter the number of neurons in the hidden layer."
+        printError()
+
+    if datasetType is None:
+        print "\nPlease enter the type of the data set."
+        printError()
 
     datasetFolder = ""
 
@@ -159,50 +191,82 @@ def main(argv):
         datasetFolder = "circle/"
     elif (datasetType == 2 or datasetType == 3):
         datasetFolder = "iris/"
-    elif (datasetType == 4 or datasetType == 5):
+    elif (datasetType == 4):
         datasetFolder = "logicalOperators/"
 
-    path = dataFolder+datasetFolder+fileName
-    f = open(path,'r')
+    filePath = dataFolder+datasetFolder+fileName
+    fileExists = os.path.isfile(filePath)
 
-    fileData = readFile(path)
+    if fileExists:
+        f = open(filePath,'r')
+    else:
+        print "\nThe given input file '%s' doesn't exist.\n" %(filePath)
+        sys.exit()
+
+    fileData = readFile(filePath)
     data,numInput,numOuter = processData(fileData,datasetType)
     
     iteration = 0
     totalError = 2000
 
-    network = Network(numInput,numHidden,numOuter)
+    network = Network(numInput,numHidden,numOuter,learnRate)
 
-    if len(argv) == 4:
+    if weightsFile is not None: 
 
-        path = weightsFolder+datasetFolder+"weights_"+str(numHidden)+"_"+fileName
+        filePath = weightsFolder+datasetFolder+weightsFile
         
-        with open(path,'r') as weightsFile:
-            weights = json.load(weightsFile)
+        with open(filePath,'r') as f:
+            weights = json.load(f)
 
         network.setWeights(weights)
 
-    #TODO Verify previous error to see if it changes
-    while (totalError != 0 and totalError > MINERR and iteration < MAXITER):
+    totalErrors = []
 
-        print "Iteration: %s" %(iteration)
+    #TODO Verify previous error to see if it changes
+    # while (totalError != 0 and totalError > MINERR and iteration < MAXITER):
+
+    global MAXITER
+
+    if (learnRate == 0.2):
+        MAXITER = 20000
+    elif (learnRate == 0.1):
+        MAXITER = 25000
+    elif (learnRate == 0.05):
+        MAXITER = 40000
+    elif (learnRate == 0.01):
+        MAXITER = 50000
+
+    print MAXITER
+
+    while (iteration < MAXITER):
+        # print "Iteration: %s" %(iteration)
         totalError = 0
         totalError = network.train(data)
+        totalErrors.append(totalError)
         iteration += 1
     
-    network.printWeights()
+    # network.printWeights()
+
+    timestr = time.strftime("%Y%m%d%H%M%S")
+    errorName = "error_neurons"+str(numHidden)+"_rate"+str(learnRate)+"_"+timestr+"_"
+    filePath = errorFolder+datasetFolder+errorName+fileName
+    
+    with open(filePath,'w') as errorFile:
+        json.dump(totalErrors,errorFile)    
 
     weights = network.getWeights()
 
-    path = weightsFolder+datasetFolder+"weights_"+str(numHidden)+"_"+fileName
-    with open(path,'w') as weightsFile:
+    # weightStr = ""
+    # if datasetType == 3:
+    #     weightStr= "2_weights_"
+    # else:
+    #     weightStr= "weights_"
+
+    weightStr = "weights_neurons"+str(numHidden)+"_rate"+str(learnRate)+"_"+timestr+"_"
+
+    filePath = weightsFolder+datasetFolder+weightStr+fileName
+    with open(filePath,'w') as weightsFile:
         json.dump(weights,weightsFile)
-
-
-    # fileData = readFile(dataFolder+datasetFolder+"testSet.txt")
-    # data,numInput,w = processData(fileData,datasetType)
-
-    # network.classify(data)
 
 if __name__ == '__main__':
     main(sys.argv[1:])

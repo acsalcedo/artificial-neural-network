@@ -126,9 +126,11 @@ class NeuronLayer:
 
 class Network:
 
-    def __init__(self,numInput,numHidden,numOuter):
+    def __init__(self,numInput,numHidden,numOuter,learnRate):
         self.numHidden = numHidden
         self.numOuter = numOuter
+        global LEARNRATE
+        LEARNRATE = learnRate
         
         self.hiddenLayer = NeuronLayer(0,numHidden,numInput)
         self.outerLayer = NeuronLayer(numHidden,numOuter,numHidden)
@@ -154,7 +156,6 @@ class Network:
         totalError = 0
 
         for example in data:
-
 
             inputs = []
             for i in example[:-1]:
@@ -197,7 +198,7 @@ class Network:
             # print "Outer output: %s - Target: %s - Error: %s" %(outerLayer.getOutput(),target,error)
     
         totalError = totalError / len(data)
-        print "Error: %s\n" %(totalError)
+        # print "Error: %s\n" %(totalError)
 
         return totalError
 
@@ -219,11 +220,12 @@ class Network:
 
             for o in outerOutputs:
 
-                if (o < 0.5):
-                    print 0
-                    # plt.plot(inputs[0], inputs[1], 'rs',  markersize=5)
-                elif (o >= 0.5):
-                    print 1
+                print o
+                # if (o < 0.5):
+                #     print 0
+                #     # plt.plot(inputs[0], inputs[1], 'rs',  markersize=5)
+                # elif (o >= 0.5):
+                #     print 1
                     # plt.plot(inputs[0], inputs[1], 'bo', markersize=5)
 
         # circle=plt.Circle((10,10),7,fill=False)
