@@ -16,8 +16,8 @@ def generateGraph():
         errors = json.load(f)
         iterList,errorList = [], []
 
-        # for i in range(len(errors)):
-        for i in range(5000):
+        for i in range(len(errors)):
+        # for i in range(5000):
             iterList.append(i)
             errorList.append(errors[i])
 
@@ -25,4 +25,34 @@ def generateGraph():
 
         plt.savefig('plot.png')
 
-generateGraph()
+
+def meanError():
+
+
+    for directory in os.listdir(dataFolder):
+        
+        totalIters = 0
+        meanError = 0
+
+        print directory
+
+        folder = dataFolder+directory
+        
+        for fileName in os.listdir(folder):
+
+            f = open(os.path.join(folder, fileName), "r")
+
+            errors = json.load(f)
+
+            for i in range(len(errors)):
+                meanError += errors[i]
+
+            totalIters += len(errors)
+
+        meanError = meanError / totalIters
+
+        print meanError
+        
+
+# generateGraph()
+meanError()
