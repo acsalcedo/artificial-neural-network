@@ -202,9 +202,9 @@ class Network:
 
         return totalError
 
-    def classify(self,data):
+    def classify(self,data,datasetType):
 
-        # plt.axis([0,20,0,20])
+        output = []
 
         for example in data:
 
@@ -218,16 +218,24 @@ class Network:
             self.outerLayer.setInput(hiddenOutputs)
             outerOutputs = self.outerLayer.calculateOutputs()
 
-            for o in outerOutputs:
 
-                print o
-                # if (o < 0.5):
-                #     print 0
-                #     # plt.plot(inputs[0], inputs[1], 'rs',  markersize=5)
-                # elif (o >= 0.5):
-                #     print 1
-                    # plt.plot(inputs[0], inputs[1], 'bo', markersize=5)
+            if datasetType != 3:
 
+                for o in outerOutputs:
+                
+                    if (o < 0.5):
+                        
+                        output.append(0)
+                        # plt.plot(inputs[0], inputs[1], 'rs',  markersize=5)
+                    elif (o >= 0.5):
+                    #     print 1
+                        output.append(1)
+                        # plt.plot(inputs[0], inputs[1], 'bo', markersize=5)
+            # else:
+
+            #     for o in outerOutputs:
+
+        return output
         # circle=plt.Circle((10,10),7,fill=False)
         # plt.gca().add_artist(circle)
         # plt.axis('equal')

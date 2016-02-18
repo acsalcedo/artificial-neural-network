@@ -4,84 +4,106 @@ import random
 import sys
 import json
 import os
-
+from network import Network
 
 dataFolder = "../error/circle/"
-def generateGraph():
-    
+graphFolder = "../graphs/"
 
+def generateMeanErrorGraph(errorFolder):
 
-    for fileName in os.listdir(dataFolder):
+    iters = 5000
+    print "Generating graphs for Mean Errors (%s) over %s iterations." %(errorFolder,iters)
 
-        f = open(os.path.join(dataFolder, fileName), "r")
+    mainDirectory = dataFolder+errorFolder
 
-        errors = json.load(f)
-        iterList,errorList = [], []
-
-        for i in range(len(errors)):
-        # for i in range(5000):
-            iterList.append(i)
-            errorList.append(errors[i])
-
-        plt.plot(iterList,errorList)
-
-        plt.savefig('plot.png')
-
-
-def meanError():
-
-
-    for directory in os.listdir(dataFolder):
+    for directory in os.listdir(mainDirectory):
         
         fig, ax = plt.subplots()
-        plt.axis([0,5000,0,0.27])
+        plt.axis([0,iters,0,0.27])
 
-        print directory
+        print "Currently in directory: %s" %(directory)
 
-        folder = dataFolder+directory
-        minError = 1
+        folder = mainDirectory+"/"+directory
+        minMeanError = 1
 
         for subDirectory in os.listdir(folder):
 
-            print subDirectory
+            print "Currently generating graph for: %s" %(subDirectory)
 
             subFolder = folder+"/"+subDirectory
-            totalIters = 0
+            totalIterations = 0
             meanError = 0
 
-            allErrorList = []
+            meanErrorListList = []
 
             for fileName in os.listdir(subFolder):
                 f = open(os.path.join(subFolder, fileName), "r")
 
                 errors = json.load(f)
 
-                errorList = []
+                meanErrorList = []
 
-                for i in range(5000):
-                    if errors[i] < minError:
-                        minError = errors[i]
+                for i in range(iters):
+
+                    if errors[i] < minMeanError:
+                        minMeanError = errors[i]
 
                     meanError += errors[i]
-                    errorList.append(errors[i])
+                    meanErrorList.append(errors[i])
 
-                totalIters += len(errors)
+                totalIterations += len(errors)
 
-                allErrorList.append(errorList)
+                meanErrorListList.append(meanErrorList)
 
-            avgList = [sum(e)/len(e) for e in zip(*allErrorList)]
+            #Finds the average of mean errors for each iteration.
+            avgMeanErrorList = [sum(e)/len(e) for e in zip(*meanErrorListList)]
 
-            # print avgList
-            # meanError = meanError / totalIters
-
-            # print minError
-            # print meanError
-
-            plt.plot(range(len(avgList)),avgList, label=subDirectory)
+            plt.plot(range(len(avgMeanErrorList)),avgMeanErrorList, label=subDirectory)
             handles, labels = ax.get_legend_handles_labels()
             ax.legend(handles, labels)
-            plt.savefig(directory+".png")
+            plt.savefig(graphFolder+errorFolder+"_"+directory+".png")
+   
+def generateCircleGraph(data,output):
+    plt.axis([0,20,0,20])
+
+    for i in range(len(data)):
+    
+        x = data[i][0]
+        y = data[i][1]
+
         
 
-# generateGraph()
-meanError()
+        inCircle = ((x-10)**2 + (y-10)**2) <= 49 
+        print "Are coordinates %s, %s in circle? %s Output: %s" %(x,y,inCircle,output[i])
+
+        if inCircle:
+            if output[i] == 1:   
+                pass
+                # plt.plot(x,y, 'rs', markersize=5)
+
+            if output[i] == 0:
+               pass
+
+        else:
+
+            if output[i] == 1:   
+               pass
+
+            if output[i] == 0:
+                plt.plot(x,y, 'bo', markersize=5)
+              
+    circle=plt.Circle((10,10),7,fill=False)
+    plt.gca().add_artist(circle)
+    plt.axis('equal')
+    plt.savefig('circle.png')
+
+
+
+def main():
+    generateMeanErrorGraph("learnRate")
+    generateMeanErrorGraph("neurons")
+
+
+if __name__ == '__main__':
+    main()
+

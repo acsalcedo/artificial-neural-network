@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from network import Network
+from graph import generateCircleGraph
 import json
 import sys, os.path
 import time
@@ -10,7 +11,7 @@ weightsFolder = "../weights/"
 errorFolder = "../error/"
 
 MAXITER = 10000
-MINERR = 0.001
+MINERR = 0.02
 MIN = 0
 MAX = 20
 
@@ -57,10 +58,10 @@ def normalizeInput(inputX,inputY,target):
     
     return (x,y,target)
 
-def processData(data,datasetType):
+def processData(data,datasetType,normalize):
 
     if (datasetType == 1):
-        return (processCircleData(data),2,1)
+        return (processCircleData(data,normalize),2,1)
     if (datasetType == 2):
         return (processIrisData(data),4,1)
     if (datasetType == 3):
@@ -70,13 +71,18 @@ def processData(data,datasetType):
     if (datasetType == 5):
         return (processLogicalOpData2(data),3,1)
 
-def processCircleData(data):
+def processCircleData(data,normalize):
 
     processed = []
 
     for example in data:
         xValue,yValue,targetValue = example.split(" ")
-        x,y,target = normalizeInput(float(xValue),float(yValue),int(targetValue))
+
+        if normalize:
+            x,y,target = normalizeInput(float(xValue),float(yValue),int(targetValue))
+        else:
+            x,y,target = float(xValue),float(yValue),int(targetValue)
+
         processed.append((x,y,[target]))
 
     return processed
@@ -142,20 +148,20 @@ def processLogicalOpData2(data):
     return processed
 
 def printError():
-    print "\npython main.py -t <datasetType> -i <inputDataFile> -n <numHiddenLayerNeurons> -w <weightsFile> -r <learnRate>"
+    print "\npython main.py -t <datasetType> -i <inputDataFile> -n <numHiddenLayerNeurons> -w <weightsFile> -r <learnRate> -c <fileToClassify>"
     print "\nDataset Type:"
     print "\t1 -> circle"
     print "\t2 -> iris"
     print "\t3 -> iris with three classes" 
     print "\t4 -> logical operators"
-    print "\nWeights file and learn rate are optional."
+    print "\nWeights file, learn rate and file to classify are optional."
     print
     sys.exit(2)
 
 def main(argv):
 
     try:
-        opts, args = getopt.getopt(argv,"t:i:n:w:r:",["datasetType=","infile=","numHidden=","weightsFile=","rate="])
+        opts, args = getopt.getopt(argv,"t:i:n:w:r:c:",["datasetType=","infile=","numHidden=","weightsFile=","rate=","classifyFile="])
     except getopt.GetoptError:
         print "\nIncorrect call. Please try again."
         printError()
@@ -164,6 +170,7 @@ def main(argv):
     numHidden = None
     weightsFile = None
     learnRate = 0.05
+    classifyFile = None
 
     for opt, arg in opts:
         if opt in ("-t", "--datasetType"):
@@ -176,6 +183,8 @@ def main(argv):
             weightsFile = str(arg)
         elif opt in ("-r", "--rate"):
             learnRate = float(arg)
+        elif opt in ("-c", "--classifyFile"):
+            classifyFile = str(arg)
 
     if numHidden is None:
         print "\nPlease enter the number of neurons in the hidden layer."
@@ -204,69 +213,66 @@ def main(argv):
         sys.exit()
 
     fileData = readFile(filePath)
-    data,numInput,numOuter = processData(fileData,datasetType)
+    data,numInput,numOuter = processData(fileData,datasetType,True)
     
     iteration = 0
     totalError = 2000
 
     network = Network(numInput,numHidden,numOuter,learnRate)
 
-    if weightsFile is not None: 
-
-        filePath = weightsFolder+datasetFolder+weightsFile
+    if weightsFile is not None:
         
-        with open(filePath,'r') as f:
-            weights = json.load(f)
+        filePath = weightsFolder+datasetFolder+weightsFile 
 
-        network.setWeights(weights)
+        if os.path.isfile(filePath): 
+       
+            with open(filePath,'r') as f:
+                weights = json.load(f)
 
-    totalErrors = []
+            network.setWeights(weights)
 
-    #TODO Verify previous error to see if it changes
-    # while (totalError != 0 and totalError > MINERR and iteration < MAXITER):
+    else:
+        totalErrors = []
 
-    global MAXITER
+        #TODO Verify previous error to see if it changes
+        while (totalError != 0 and totalError > MINERR and iteration < MAXITER):
 
-    if (learnRate == 0.2):
-        MAXITER = 20000
-    elif (learnRate == 0.1):
-        MAXITER = 25000
-    elif (learnRate == 0.05):
-        MAXITER = 40000
-    elif (learnRate == 0.01):
-        MAXITER = 50000
+            totalError = 0
+            totalError = network.train(data)
+            totalErrors.append(totalError)
+            print "Iteration: %s, totalError: %s" %(iteration,totalError)
+            iteration += 1
+        
+        network.printWeights()
 
-    print MAXITER
+        timestr = time.strftime("%Y%m%d%H%M%S")
+        errorName = "error_neurons"+str(numHidden)+"_rate"+str(learnRate)+"_"+timestr+"_"
+        filePath = errorFolder+datasetFolder+errorName+fileName
+        
+        with open(filePath,'w') as errorFile:
+            json.dump(totalErrors,errorFile)    
 
-    while (iteration < MAXITER):
-        # print "Iteration: %s" %(iteration)
-        totalError = 0
-        totalError = network.train(data)
-        totalErrors.append(totalError)
-        iteration += 1
+        weights = network.getWeights()
+        weightStr = "weights_neurons"+str(numHidden)+"_rate"+str(learnRate)+"_"+timestr+"_"
+
+        filePath = weightsFolder+datasetFolder+weightStr+fileName
+        with open(filePath,'w') as weightsFile:
+            json.dump(weights,weightsFile)
+
+
+    if classifyFile is not None:
     
-    # network.printWeights()
-
-    timestr = time.strftime("%Y%m%d%H%M%S")
-    errorName = "error_neurons"+str(numHidden)+"_rate"+str(learnRate)+"_"+timestr+"_"
-    filePath = errorFolder+datasetFolder+errorName+fileName
+        filePath = dataFolder+datasetFolder+classifyFile
     
-    with open(filePath,'w') as errorFile:
-        json.dump(totalErrors,errorFile)    
+        if os.path.isfile(filePath):  
 
-    weights = network.getWeights()
+            classifyFileData = readFile(filePath)
+            data,numInput,numOuter = processData(classifyFileData,datasetType,False)
+            output = network.classify(data,datasetType)
 
-    # weightStr = ""
-    # if datasetType == 3:
-    #     weightStr= "2_weights_"
-    # else:
-    #     weightStr= "weights_"
+            generateCircleGraph(data,output)
 
-    weightStr = "weights_neurons"+str(numHidden)+"_rate"+str(learnRate)+"_"+timestr+"_"
 
-    filePath = weightsFolder+datasetFolder+weightStr+fileName
-    with open(filePath,'w') as weightsFile:
-        json.dump(weights,weightsFile)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
