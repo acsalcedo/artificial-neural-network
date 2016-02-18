@@ -1,8 +1,10 @@
+from __future__ import division
 import matplotlib.pyplot as plt
 import random
 import sys
 import json
 import os
+
 
 dataFolder = "../error/circle/"
 def generateGraph():
@@ -31,27 +33,54 @@ def meanError():
 
     for directory in os.listdir(dataFolder):
         
-        totalIters = 0
-        meanError = 0
+        fig, ax = plt.subplots()
+        plt.axis([0,5000,0,0.27])
 
         print directory
 
         folder = dataFolder+directory
-        
-        for fileName in os.listdir(folder):
+        minError = 1
 
-            f = open(os.path.join(folder, fileName), "r")
+        for subDirectory in os.listdir(folder):
 
-            errors = json.load(f)
+            print subDirectory
 
-            for i in range(len(errors)):
-                meanError += errors[i]
+            subFolder = folder+"/"+subDirectory
+            totalIters = 0
+            meanError = 0
 
-            totalIters += len(errors)
+            allErrorList = []
 
-        meanError = meanError / totalIters
+            for fileName in os.listdir(subFolder):
+                f = open(os.path.join(subFolder, fileName), "r")
 
-        print meanError
+                errors = json.load(f)
+
+                errorList = []
+
+                for i in range(5000):
+                    if errors[i] < minError:
+                        minError = errors[i]
+
+                    meanError += errors[i]
+                    errorList.append(errors[i])
+
+                totalIters += len(errors)
+
+                allErrorList.append(errorList)
+
+            avgList = [sum(e)/len(e) for e in zip(*allErrorList)]
+
+            # print avgList
+            # meanError = meanError / totalIters
+
+            # print minError
+            # print meanError
+
+            plt.plot(range(len(avgList)),avgList, label=subDirectory)
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(handles, labels)
+            plt.savefig(directory+".png")
         
 
 # generateGraph()
