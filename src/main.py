@@ -240,7 +240,8 @@ def main(argv):
             totalError = 0
             totalError = network.train(data)
             totalErrors.append(totalError)
-            print "Iteration: %s, totalError: %s" %(iteration,totalError)
+            if (iteration % 100 == 0):
+                print "Iteration: %s, totalError: %s" %(iteration,totalError)
             iteration += 1
         
         network.printWeights()
