@@ -44,6 +44,7 @@ def generateMeanErrorGraph(errorFolder):
 
         folder = mainDirectory+"/"+directory
         minMeanError = 1
+        totalMeanErrorList = []
 
         for subDirectory in os.listdir(folder):
 
@@ -71,9 +72,13 @@ def generateMeanErrorGraph(errorFolder):
                     meanError += errors[i]
                     meanErrorList.append(errors[i])
 
-                totalIterations += len(errors)
+                totalIterations += iters
 
                 meanErrorListList.append(meanErrorList)
+
+            meanError = meanError / totalIterations
+
+            totalMeanErrorList.append(meanError)
 
             #Finds the average of mean errors for each iteration.
             avgMeanErrorList = [sum(e)/len(e) for e in zip(*meanErrorListList)]
@@ -89,10 +94,16 @@ def generateMeanErrorGraph(errorFolder):
         ax.legend(handles, labels, title=titleLegend)
 
         plt.savefig(graphFolder+errorFolder+"_"+directory+".png")
+
+        # generatBarGraphError(totalMeanErrorList)
+        
+
    
 def generateCircleGraph(data,output):
     plt.axis([0,20,0,20])
 
+    wrongCircle = 0
+    wrongSquare = 0
     for i in range(len(data)):
     
         x = data[i][0]
@@ -101,16 +112,19 @@ def generateCircleGraph(data,output):
         
 
         inCircle = ((x-10)**2 + (y-10)**2) <= 49 
-        print "Are coordinates %s, %s in circle? %s Output: %s" %(x,y,inCircle,output[i])
+        # print "Are coordinates %s, %s in circle? %s Output: %s" %(x,y,inCircle,output[i])
 
 
         if output[i] == 0:
 
             if not inCircle:
+
+                wrongCircle += 1
                 plt.plot(x,y, 'rs', markersize=5)
         else:
 
             if inCircle:
+                wrongSquare += 1
                 plt.plot(x,y, 'go', markersize=5)
         # if inCircle:
         #     if output[i] == 1:   
@@ -128,12 +142,27 @@ def generateCircleGraph(data,output):
         #     if output[i] == 0:
         #         plt.plot(x,y, 'bo', markersize=5)
               
+    print "Circle points classified as squares: %s" %(wrongCircle)
+    print "Square points classified as circles: %s" %(wrongSquare)
     circle=plt.Circle((10,10),7,fill=False)
     plt.gca().add_artist(circle)
-    plt.axis('equal')
-    plt.savefig('circle.png')
+    # plt.axis('equal')
+    plt.grid(True)
+    plt.savefig('../graphs/circle.png')
 
+def generatBarGraphError(errors):
 
+    n_groups = 9
+    # index = np.arange(n_groups)
+    barGraph = plt.bar(8, errors, 0.35,
+                 color='b')
+    plt.clf()
+    plt.xlabel('Neuronas')
+    plt.ylabel('Error')
+    plt.title('Histograma - Error Cuadratico Medio')
+    plt.axis([2, 10, 0, 0.03])
+    plt.grid(True)
+    plt.savefig("../graphs/histogram.png")
 
 def main():
     generateMeanErrorGraph("learnRate")
