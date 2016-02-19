@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from network import Network
-from graph import generateCircleGraph
+from graph import generateCircleGraph, generateIris
 import json
 import sys, os.path
 import time
@@ -10,8 +10,8 @@ dataFolder = "../data/"
 weightsFolder = "../weights/"
 errorFolder = "../error/"
 
-MAXITER = 10000
-MINERR = 0.02
+MAXITER = 200
+MINERR = 0.002
 MIN = 0
 MAX = 20
 
@@ -114,7 +114,7 @@ def processIrisData2(data):
     for example in data:
         sLenValue, sWidValue, pLenValue, pWidValue, irisValue = example.split(",")
 
-        irisClass = 0
+        irisClass = [0]
 
         if (irisValue.rstrip() == "Iris-setosa"):
             irisClass = [1,0,0]
@@ -231,19 +231,28 @@ def main(argv):
 
             network.setWeights(weights)
 
+            print "\nWeights set."
+            network.printWeights()
+
+        else:
+            print "\nWeights file %s doesn't exist.\n" %(filePath)
+            sys.exit()
+
     else:
         totalErrors = []
 
-        #TODO Verify previous error to see if it changes
-        while (totalError != 0 and totalError > MINERR and iteration < MAXITER):
+        totalMean = 0
 
+        while (totalError != 0 and totalError > MINERR and iteration < MAXITER):
             totalError = 0
             totalError = network.train(data)
             totalErrors.append(totalError)
+            totalMean += totalError
             if (iteration % 100 == 0):
                 print "Iteration: %s, totalError: %s" %(iteration,totalError)
             iteration += 1
         
+        print totalMean / iteration
         network.printWeights()
 
         timestr = time.strftime("%Y%m%d%H%M%S")
@@ -268,10 +277,15 @@ def main(argv):
         if os.path.isfile(filePath):  
 
             classifyFileData = readFile(filePath)
-            data,numInput,numOuter = processData(classifyFileData,datasetType,False)
+            data,numInput,numOuter = processData(classifyFileData,datasetType,True)
+            dataClassify,numInput,numOuter = processData(classifyFileData,datasetType,False)
             output = network.classify(data,datasetType)
+            
+            if datasetType == 1:
+                generateCircleGraph(dataClassify,output)
+            else:
+                generateIris(dataClassify,output,datasetType)
 
-            generateCircleGraph(data,output)
 
 
 

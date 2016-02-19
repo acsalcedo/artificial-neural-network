@@ -43,7 +43,6 @@ def main(argv):
 def generatePoints():
 
     f = open(dataFolder+"testSet.txt",'w')
-
     y = 0
 
     while y <= 20:
@@ -54,7 +53,3 @@ def generatePoints():
         y += 0.2
         
     f.close()
-
-if __name__ == '__main__':
-    # main(sys.argv[1:])
-    generatePoints()

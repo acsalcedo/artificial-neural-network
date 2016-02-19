@@ -2,7 +2,6 @@ import random
 import math
 import matplotlib.pyplot as plt
 
-
 LEARNRATE = 0.05
 
 def getRandom():
@@ -195,10 +194,8 @@ class Network:
 
             error *= error
             totalError += error
-            # print "Outer output: %s - Target: %s - Error: %s" %(outerLayer.getOutput(),target,error)
-    
+        
         totalError = totalError / len(data)
-        # print "Error: %s\n" %(totalError)
 
         return totalError
 
@@ -218,25 +215,23 @@ class Network:
             self.outerLayer.setInput(hiddenOutputs)
             outerOutputs = self.outerLayer.calculateOutputs()
 
-
             if datasetType != 3:
 
                 for o in outerOutputs:
-                
                     if (o < 0.5):
-                        
                         output.append(0)
-                        # plt.plot(inputs[0], inputs[1], 'rs',  markersize=5)
                     elif (o >= 0.5):
-                    #     print 1
                         output.append(1)
-                        # plt.plot(inputs[0], inputs[1], 'bo', markersize=5)
-            # else:
 
-            #     for o in outerOutputs:
+
+            if datasetType == 3:
+                oList = []
+                for o in outerOutputs:
+
+                    if (o < 0.5):
+                        oList.append(0)
+                    elif (o >= 0.5):
+                        oList.append(1)
+                output.append(oList)
 
         return output
-        # circle=plt.Circle((10,10),7,fill=False)
-        # plt.gca().add_artist(circle)
-        # plt.axis('equal')
-        # plt.savefig('graph2.png')
