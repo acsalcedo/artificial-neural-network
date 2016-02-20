@@ -10,7 +10,7 @@ dataFolder = "../data/"
 weightsFolder = "../weights/"
 errorFolder = "../error/"
 
-MAXITER = 200
+MAXITER = 10000
 MINERR = 0.002
 MIN = 0
 MAX = 20
@@ -286,8 +286,9 @@ def main(argv):
             else:
                 generateIris(dataClassify,output,datasetType)
 
-
-
+        else:
+            print "\nClassify file '%s' doesn't exist.\n" %(filePath)
+            sys.exit()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
